@@ -90,17 +90,21 @@ const deleteUsuario = async (req = request, res = response) => {
 
 const buscarUsuariosPorCiudad = async (req = request, res = response) => {
     try {
-        const { ciudad } = req.query;
+        const ciudad = req.query.ciudad;
         if (!ciudad) {
             return res.status(400).json({ msg: 'La ciudad es requerida' });
         }
 
-        const usuarios = await Usuario.find({ 'direcciones.ciudad': ciudad });
+        // Filtrar por direcciones.ciudad
+        const usuarios = await Usuario.find({ "direcciones.ciudad": ciudad });
+
         return res.json(usuarios);
     } catch (e) {
-        return res.status(500).json({ msg: 'Error general: ' + e });
+        console.error("Error en buscarUsuariosPorCiudad:", e);
+        return res.status(500).json({ msg: 'Error general: ' + e.message });
     }
 };
+
 
 module.exports = {
     createUsuario,

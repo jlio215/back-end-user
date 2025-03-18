@@ -7,7 +7,6 @@ const validateJWT = (req, res, next) => {
     }
     try {
         const payload = jwt.verify(token, '123456');
-        console.log(payload)
         req.payload = payload;
         next();
     } catch (error) {

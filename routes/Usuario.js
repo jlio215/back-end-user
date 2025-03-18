@@ -1,5 +1,5 @@
 const { Router } = require('express')
-const {createUsuario, getUsuarios,  getUsuario, updateUsuarioByID, deleteUsuario} = require('../controllers/Usuario.js')
+const {createUsuario, getUsuarios,  getUsuario, updateUsuarioByID, deleteUsuario, buscarUsuariosPorCiudad} = require('../controllers/Usuario.js')
 const { validateRolAdmin } = require('../middleware/validate-rol-admin.js')
 const { validateJWT } = require('../middleware/validate-jwt.js')
 
@@ -16,6 +16,11 @@ router.post('/', validateJWT, validateRolAdmin, createUsuario )
 router.get('/', validateJWT, validateRolAdmin, getUsuarios )
 
 /**
+ * Consultar usuarios por ciudad
+ */
+router.get('/buscar', validateJWT, validateRolAdmin, buscarUsuariosPorCiudad);
+
+/**
  * Consultar un Usuario por su ID
  */
 router.get('/:id', validateJWT, validateRolAdmin, getUsuario )
@@ -28,5 +33,6 @@ router.put('/:id', validateJWT, validateRolAdmin, updateUsuarioByID)
  * Borrar un Usuario
  */
 router.delete('/:id', validateJWT, validateRolAdmin, deleteUsuario)
+
 
 module.exports = router
