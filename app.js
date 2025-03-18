@@ -14,17 +14,9 @@ app.use(cors({
 }))
 
 const usuario = require('./routes/Usuario.js')
-const estadoEquipo = require('./routes/estadoEquipo.js')
-const inventario = require('./routes/inventario.js')
-const tipoEquipo = require('./routes/tipoEquipo.js')
-const marca = require('./routes/marca.js')
 const auth = require('./routes/auth.js')
 
 app.use('/usuarios', usuario)
 app.use('/auth', auth)
-app.use('/estadoEquipos', estadoEquipo)
-app.use('/inventarios', inventario)
-app.use('/tipoEquipos', tipoEquipo)
-app.use('/marcas', marca)
 
 module.exports = app

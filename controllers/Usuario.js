@@ -1,97 +1,112 @@
-const Usuario = require('../models/Usuario')
-const { request, response } = require('express')
-const bycript = require ('bcryptjs')
+const Usuario = require('../models/Usuario');
+const { request, response } = require('express');
+const bcrypt = require('bcryptjs');
 
 /**
  * Crear usuario
  */
-const createUsuario = async (req = request, res = response) => {// endpoint
-    //console.log(req.body)
-
-        
+const createUsuario = async (req = request, res = response) => {
     try {
-        const usuario = new Usuario(req.body)
+        const { email, password, ...rest } = req.body;
 
-        const salt = bycript.genSaltSync();
-        const password = bycript.hashSync(req.body.password, salt);
-        usuario.password = password;
-        const usuarioDB = await Usuario.findOne({ email:req.body.email })
+        const usuarioDB = await Usuario.findOne({ email });
+        if (usuarioDB) {
+            return res.status(400).json({ msg: 'Ya existe email' });
+        }
 
-        if(usuarioDB) {
-            return res.status(400).json({mjs: 'Ya existe email'})
-        }// select * from usuario where email = ?
-    
-        await usuario.save()
-        return res.status(201).json(usuario)
+        const salt = bcrypt.genSaltSync();
+        const hashedPassword = bcrypt.hashSync(password, salt);
 
-    } catch(error) {
-        console.log(error)
-        return res.status(500).json({msj: error})
+        const usuario = new Usuario({ ...rest, email, password: hashedPassword });
+        await usuario.save();
+
+        return res.status(201).json(usuario);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ msg: 'Error interno del servidor' });
     }
-}
-const getUsuarios = async (req = request, 
-    res = response) => {
-        try{
-            const {  } = req.query
-            const usuarioDB = await Usuario.find()
-            console.log(usuarioDB)
-            return res.json(usuarioDB)
-        }catch(e){
-            return res.status(500).json({
-                msg: 'Error general' + e
-            })
-        }
-}
+};
 
-const getUsuario = async (req = request, 
-    res = response) => {
-        try{
-            const data = req.body
-            const id = req.params.id
-            const usuarioDB = await Usuario.findById(id)
-            return res.json(usuarioDB)
-        }catch(e){
-            return res.status(500).json({
-                msg: 'Error general' + e
-            })
-        }
-}
-
-//TODO
-const updateUsuarioByID = async (req = request,
-    res = response) => {
-    try{
-        const usuario = new Usuario(req.body);
-        const salt = bycript.genSaltSync();
-        const password = bycript.hashSync(req.body.password, salt);
-        usuario.password = password;
-        const id = req.params.id
-        const data = req.body;
-        data.fechaActualizacion = new Date()
-        const obj = await Usuario.findByIdAndUpdate(id, data, {new: true})
-        return res.status(201).json(obj)
-    }catch(e){
-        console.log(e)
-        return res.status(500).json({msg: e})  
+const getUsuarios = async (req = request, res = response) => {
+    try {
+        const usuarios = await Usuario.find();
+        return res.json(usuarios);
+    } catch (e) {
+        return res.status(500).json({ msg: 'Error general: ' + e });
     }
-}
-const deleteUsuario = async (req = request, 
-    res = response) => {
-        try{
-            const id = req.params.id
-            const usuarioDB = await Usuario.deleteOne({_id: id})//select * from tipo where estado=?
-            return res.json(usuarioDB)
-        }catch(e){
-            return res.status(500).json({
-                msg: 'Error general ' + e
-            })
-        }
-}
+};
 
-module.exports = { 
-    createUsuario, 
+const getUsuario = async (req = request, res = response) => {
+    try {
+        const id = req.params.id;
+        const usuario = await Usuario.findById(id);
+        if (!usuario) {
+            return res.status(404).json({ msg: 'Usuario no encontrado' });
+        }
+        return res.json(usuario);
+    } catch (e) {
+        return res.status(500).json({ msg: 'Error general: ' + e });
+    }
+};
+
+const updateUsuarioByID = async (req = request, res = response) => {
+    try {
+        const { password, ...data } = req.body;
+        const id = req.params.id;
+
+        if (password) {
+            const salt = bcrypt.genSaltSync();
+            data.password = bcrypt.hashSync(password, salt);
+        }
+
+        data.fechaActualizacion = new Date();
+        const usuarioActualizado = await Usuario.findByIdAndUpdate(id, data, { new: true });
+
+        if (!usuarioActualizado) {
+            return res.status(404).json({ msg: 'Usuario no encontrado' });
+        }
+
+        return res.status(200).json(usuarioActualizado);
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({ msg: 'Error interno del servidor' });
+    }
+};
+
+const deleteUsuario = async (req = request, res = response) => {
+    try {
+        const id = req.params.id;
+        const usuarioEliminado = await Usuario.findByIdAndDelete(id);
+
+        if (!usuarioEliminado) {
+            return res.status(404).json({ msg: 'Usuario no encontrado' });
+        }
+
+        return res.json({ msg: 'Usuario eliminado correctamente' });
+    } catch (e) {
+        return res.status(500).json({ msg: 'Error general: ' + e });
+    }
+};
+
+const buscarUsuariosPorCiudad = async (req = request, res = response) => {
+    try {
+        const { ciudad } = req.query;
+        if (!ciudad) {
+            return res.status(400).json({ msg: 'La ciudad es requerida' });
+        }
+
+        const usuarios = await Usuario.find({ 'direcciones.ciudad': ciudad });
+        return res.json(usuarios);
+    } catch (e) {
+        return res.status(500).json({ msg: 'Error general: ' + e });
+    }
+};
+
+module.exports = {
+    createUsuario,
     getUsuarios,
-    getUsuario, 
+    getUsuario,
     updateUsuarioByID,
-    deleteUsuario
-}
+    deleteUsuario,
+    buscarUsuariosPorCiudad
+};
