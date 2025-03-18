@@ -27,15 +27,37 @@ const createUsuario = async (req = request, res = response) => {
     }
 };
 
+/**
+ * Consultar usuario con paginacion
+ */
 const getUsuarios = async (req = request, res = response) => {
     try {
-        const usuarios = await Usuario.find();
-        return res.json(usuarios);
+        let { page = 1, limit = 10 } = req.query;
+        page = parseInt(page);
+        limit = parseInt(limit);
+
+        const skip = (page - 1) * limit;
+
+        const [usuarios, total] = await Promise.all([
+            Usuario.find().skip(skip).limit(limit), 
+            Usuario.countDocuments()                  
+        ]);
+
+        return res.json({
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            usuarios
+        });
     } catch (e) {
         return res.status(500).json({ msg: 'Error general: ' + e });
     }
 };
 
+/**
+ * Consultar usuario por id
+ */
 const getUsuario = async (req = request, res = response) => {
     try {
         const id = req.params.id;
@@ -49,6 +71,9 @@ const getUsuario = async (req = request, res = response) => {
     }
 };
 
+/**
+ * Actualizar usuario
+ */
 const updateUsuarioByID = async (req = request, res = response) => {
     try {
         const { password, ...data } = req.body;
@@ -73,6 +98,9 @@ const updateUsuarioByID = async (req = request, res = response) => {
     }
 };
 
+/**
+ * Eliminar usuario
+ */
 const deleteUsuario = async (req = request, res = response) => {
     try {
         const id = req.params.id;
@@ -88,6 +116,9 @@ const deleteUsuario = async (req = request, res = response) => {
     }
 };
 
+/**
+ * Consulta usuario por ciudad
+ */
 const buscarUsuariosPorCiudad = async (req = request, res = response) => {
     try {
         const ciudad = req.query.ciudad;
@@ -95,7 +126,6 @@ const buscarUsuariosPorCiudad = async (req = request, res = response) => {
             return res.status(400).json({ msg: 'La ciudad es requerida' });
         }
 
-        // Filtrar por direcciones.ciudad
         const usuarios = await Usuario.find({ "direcciones.ciudad": ciudad });
 
         return res.json(usuarios);
